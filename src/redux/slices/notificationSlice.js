@@ -1,4 +1,3 @@
-// src/redux/slices/notificationSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 import { NOTIFICATION_EVENTS, USER_EVENTS, SWAP_EVENTS } from '../../events/eventTypes';
 

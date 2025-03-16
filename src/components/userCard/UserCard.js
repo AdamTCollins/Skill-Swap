@@ -1,26 +1,19 @@
-/**
- * UserCard Component.
- *
- * This file displays a single user card with their profile picture, name, age, and skills.
- * Also includes an animation for newly added users to highlight the event-driven updates.
- *
- * Event-Driven Pattern: This component receives props from UserCards which subscribes
- * to Redux state changes. When a USER_JOINED event occurs, the state updates, triggering
- * re-renders of this component without it needing to know about the event directly.
- */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import eventBus from '../../events/eventBus';
+import { SWAP_EVENTS } from '../../events/eventTypes';
 
-// Card container with animation for new users.
+// Card container with animation for new users
 const Card = styled.div`
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 20px;
     position: relative;
-    height: 340px;
+    height: 360px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     animation: ${props => props.isNew ? 'flashNew 2s ease-out' : 'none'};
+    cursor: pointer;
 
     &:hover {
         transform: translateY(-5px);
@@ -31,9 +24,21 @@ const Card = styled.div`
         0%, 100% { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
         50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
     }
+
+    /* Add swipe animation */
+    &.swiping-right {
+        animation: swipeRight 0.5s forwards;
+    }
+
+    @keyframes swipeRight {
+        to {
+            transform: translateX(120%) rotate(5deg);
+            opacity: 0;
+        }
+    }
 `;
 
-// Profile image container with gradient overlays.
+// Profile image container with gradient overlays
 const UserImage = styled.div`
     height: 100%;
     background-image: url(${props => props.src});
@@ -41,7 +46,7 @@ const UserImage = styled.div`
     background-position: center 20%;
     position: relative;
 
-    // Top gradient for better visibility of the user name tag.
+    /* Top gradient for better visibility of the user name tag */
     &:before {
         content: '';
         position: absolute;
@@ -53,7 +58,7 @@ const UserImage = styled.div`
         z-index: 0;
     }
 
-    // Bottom gradient for better visibility of the skill tags.
+    /* Bottom gradient for better visibility of the skill tags */
     &:after {
         content: '';
         position: absolute;
@@ -66,7 +71,7 @@ const UserImage = styled.div`
     }
 `;
 
-// User name and age tag.
+// User name and age tag
 const UserInfo = styled.div`
     position: absolute;
     top: 10px;
@@ -80,7 +85,7 @@ const UserInfo = styled.div`
     z-index: 1;
 `;
 
-// Has skill tag.
+// Has skill tag (bottom left)
 const HasSkill = styled.div`
     position: absolute;
     bottom: 15px;
@@ -103,7 +108,7 @@ const HasSkill = styled.div`
     }
 `;
 
-// Wants skill tag.
+// Wants skill tag (bottom right)
 const WantsSkill = styled.div`
     position: absolute;
     bottom: 15px;
@@ -126,32 +131,74 @@ const WantsSkill = styled.div`
     }
 `;
 
+// Add SwipeOverlay for instructions
+const SwipeOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 10;
+  pointer-events: none;
+  
+  ${Card}:hover & {
+    opacity: 0.9;
+  }
+  
+  h3 {
+    margin: 0 0 10px;
+  }
+  
+  p {
+    margin: 0;
+    text-align: center;
+    padding: 0 20px;
+  }
+`;
+
 /**
- * The UserCard component displays an individual user's profile.
+ * UserCard component displays an individual user's profile
  *
  * @param {Object} user - The user data to display
  * @param {boolean} isNew - Whether this user was just added (for animation)
  * @returns {JSX.Element} The rendered user card
  */
 const UserCard = ({ user, isNew: initialIsNew }) => {
-    // State to track if the card is new (for animation).
+    // State to track if the card is new (for animation)
     const [isNew, setIsNew] = useState(initialIsNew || false);
-
-    // State to track if the image failed to load.
+    // State to track if the image failed to load
     const [imageError, setImageError] = useState(false);
+    // State to track if card is currently being swiped
+    const [swiping, setSwiping] = useState(false);
+    // Reference to the card DOM element
+    const cardRef = useRef(null);
 
-    // Effect to handle the "new" status animation timing.
+    // Touch tracking for swipe detection
+    const touchStart = useRef(null);
+    const touchEnd = useRef(null);
+
+    // Minimum distance for a swipe
+    const minSwipeDistance = 50;
+
+    // Effect to handle the "new" status animation timing
     useEffect(() => {
         if (isNew) {
             const timer = setTimeout(() => {
-                setIsNew(false);
-                // Removes "new" status after 2 seconds.
+                setIsNew(false); // Remove "new" status after 2 seconds
             }, 2000);
             return () => clearTimeout(timer);
         }
     }, [isNew]);
 
-    // Effect to handle image loading errors.
+    // Effect to handle image loading errors
     useEffect(() => {
         const img = new Image();
         img.src = user.image;
@@ -159,8 +206,8 @@ const UserCard = ({ user, isNew: initialIsNew }) => {
     }, [user.image]);
 
     /**
-     * Getting the appropriate image URL for the user.
-     * Handles fallback for image loading errors.
+     * Get the appropriate image URL for the user
+     * Handles fallback for image loading errors
      */
     const getUserImage = () => {
         if (imageError) {
@@ -169,8 +216,87 @@ const UserCard = ({ user, isNew: initialIsNew }) => {
         return user.image || `https://ui-avatars.com/api/?name=${user.name}&background=random&size=400`;
     };
 
+    /**
+     * Handle touch start event for swipe detection
+     */
+    const handleTouchStart = (e) => {
+        touchStart.current = e.targetTouches[0].clientX;
+    };
+
+    /**
+     * Handle touch move event for swipe detection
+     */
+    const handleTouchMove = (e) => {
+        touchEnd.current = e.targetTouches[0].clientX;
+    };
+
+    /**
+     * Handle touch end event for swipe detection
+     */
+    const handleTouchEnd = () => {
+        if (!touchStart.current || !touchEnd.current) return;
+
+        const distance = touchEnd.current - touchStart.current;
+        const isRightSwipe = distance > minSwipeDistance;
+
+        if (isRightSwipe && !swiping) {
+            handleSwipeRight();
+        }
+
+        // Reset values
+        touchStart.current = null;
+        touchEnd.current = null;
+    };
+
+    /**
+     * Handle click event (alternative to swiping)
+     */
+    const handleClick = () => {
+        handleSwipeRight();
+    };
+
+    /**
+     * Process the right swipe action
+     * Animate the card and dispatch swap event
+     */
+    const handleSwipeRight = () => {
+        if (swiping) return;
+
+        setSwiping(true);
+
+        if (cardRef.current) {
+            cardRef.current.classList.add('swiping-right');
+        }
+
+        // Dispatch SWAP_REQUESTED event
+        eventBus.dispatch(SWAP_EVENTS.SWAP_REQUESTED, {
+            id: Date.now(), // Generate unique ID
+            user: user.name,
+            offering: user.has,
+            wanting: user.wants,
+            avatar: `https://ui-avatars.com/api/?name=${user.name}&background=random&size=60`,
+            requesterName: user.name,
+            requesterSkill: user.has,
+            requestedSkill: user.wants
+        });
+
+        // Remove card after animation completes
+        setTimeout(() => {
+            if (cardRef.current) {
+                cardRef.current.style.display = 'none';
+            }
+        }, 500);
+    };
+
     return (
-        <Card isNew={isNew}>
+        <Card
+            ref={cardRef}
+            isNew={isNew}
+            onClick={handleClick}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
             <UserImage src={getUserImage()}>
                 <UserInfo>
                     {user.name}, {user.age}
@@ -181,6 +307,11 @@ const UserCard = ({ user, isNew: initialIsNew }) => {
                 <WantsSkill>
                     <span>Wants:</span> {user.wants}
                 </WantsSkill>
+
+                <SwipeOverlay>
+                    <h3>Interested?</h3>
+                    <p>Click to request a skill swap!</p>
+                </SwipeOverlay>
             </UserImage>
         </Card>
     );

@@ -45,7 +45,7 @@ const UserCards = () => {
                 <UserCard
                     key={user.id}
                     user={user}
-                    isNew={user.id > 13} // IDs > 13 are considered new users for animation
+                    isNew={user.id > 13}
                 />
             ))}
         </CardsContainer>

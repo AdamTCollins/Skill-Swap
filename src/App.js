@@ -16,7 +16,7 @@ import UserCards from './components/swapDiscover/UserCards';
 import eventBus from './events/eventBus';
 import { USER_EVENTS } from './events/eventTypes';
 
-// Styling components for layout structure.
+// Styled components for layout structure
 const AppContainer = styled.div`
     max-width: 100%;
     width: 100%;
@@ -40,17 +40,34 @@ const MainContent = styled.main`
     padding: 20px 25px;
 `;
 
+// Add a component for instructions
+const Instructions = styled.div`
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  
+  h3 {
+    margin-top: 0;
+    color: #f25c78;
+  }
+  
+  p {
+    margin-bottom: 0;
+  }
+`;
+
 function App() {
     /**
-     * Effect hook that simulates real-time user events.
+     * Effect hook that simulates real-time user events
      *
-     * Here, we are demonstrating our event-driven architecture by dispatching USER_JOINED events
+     * This demonstrates the event-driven architecture by dispatching USER_JOINED events
      * at different time intervals. Each event contains user data that will propagate
      * through the Redux store to update the UI components without direct coupling.
      */
     useEffect(() => {
-        // Simulating multiple users joining at different times.
-        // First user joins after 3 seconds.
+        // Simulate multiple users joining at different times
         const timer1 = setTimeout(() => {
             eventBus.dispatch(USER_EVENTS.USER_JOINED, {
                 id: 14,
@@ -60,9 +77,8 @@ function App() {
                 wants: 'Cooking',
                 image: 'https://images.unsplash.com/photo-1593529467220-9d721ceb9a78?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=500&w=400&q=80'
             });
-        }, 3000);
+        }, 3000); // First user joins after 3 seconds
 
-        // Second user joins after 6 seconds.
         const timer2 = setTimeout(() => {
             eventBus.dispatch(USER_EVENTS.USER_JOINED, {
                 id: 15,
@@ -72,9 +88,8 @@ function App() {
                 wants: 'Singing',
                 image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=500&w=400&q=80'
             });
-        }, 6000);
+        }, 6000); // Second user joins after 6 seconds
 
-        // Third user joins after 9 seconds.
         const timer3 = setTimeout(() => {
             eventBus.dispatch(USER_EVENTS.USER_JOINED, {
                 id: 16,
@@ -84,9 +99,9 @@ function App() {
                 wants: 'UI Design',
                 image: 'https://images.unsplash.com/photo-1531384441138-2736e62e0919?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=500&w=400&q=80'
             });
-        }, 9000);
+        }, 9000); // Third user joins after 9 seconds
 
-        // Fourth user joins after 12 seconds.
+        // Add a fourth person
         const timer4 = setTimeout(() => {
             eventBus.dispatch(USER_EVENTS.USER_JOINED, {
                 id: 17,
@@ -96,10 +111,9 @@ function App() {
                 wants: 'Archery',
                 image: 'https://images.unsplash.com/photo-1558898479-33c0057a5d12?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=500&w=400&q=80'
             });
-        }, 12000);
+        }, 12000); // Fourth user joins after 12 seconds
 
-
-        // Cleaning up timers to prevent memory leaks.
+        // Clean up timers to prevent memory leaks
         return () => {
             clearTimeout(timer1);
             clearTimeout(timer2);
@@ -117,6 +131,10 @@ function App() {
                     <RecentSwaps />
                 </Sidebar>
                 <MainContent>
+                    <Instructions>
+                        <h3>Find Your Perfect Skill Swap!</h3>
+                        <p>Simply click on a card to request a skill swap! Your swaps will appear under the 'Swap Requests' section, with new users appearing automatically. Happy Swapping! :)</p>
+                    </Instructions>
                     <UserCards />
                 </MainContent>
             </Layout>

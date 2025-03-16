@@ -1,22 +1,21 @@
-
 import React from 'react';
 import styled from 'styled-components';
 
 const DiscoverContainer = styled.section`
-    padding: 20px; // Increased padding
+    padding: 20px;
     border-bottom: 1px solid #eee;
 `;
 
 const Title = styled.h2`
     margin: 0 0 12px 0;
-    font-size: 24px; // Larger font
+    font-size: 24px; 
     font-weight: 600;
 `;
 
 const Description = styled.p`
     margin: 0;
     color: #555;
-    font-size: 15px; // Slightly larger font
+    font-size: 14px;
     line-height: 1.4;
 `;
 
@@ -48,7 +47,7 @@ const SwapDiscover = () => {
                 </Icon>
                 <Title>Discover New Swaps</Title>
             </IconWrapper>
-            <Description>Start swiping to connect with new people!</Description>
+            <Description>Start swapping to connect with new people!</Description>
         </DiscoverContainer>
     );
 };
